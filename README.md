@@ -10,3 +10,6 @@ Motivated by the paper (https://arxiv.org/abs/2307.02129), particularly its emph
 ```
 py main.py --device cpu --dataset hier1 --net fcn --output .\output\output.txt --num_layers 3 --net_layers 4
 ```
+```
+py main.py --device cpu --dataset hier1 --net cnn --output .\output\output.txt --num_layers 3 --net_layers 4
+```
