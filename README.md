@@ -1,4 +1,4 @@
-# Tokenizers
+# RHM project
 This is a repository of tokenizers that create a low-dimensional latent space for DDMs. 
 # Motivation
 Motivated by the paper (https://arxiv.org/abs/2401.14404), particularly its emphasis on low-dimensional latent space, we intend to construct mathematically interpretable tokenizers for DDMs that operate on a latent space. 
