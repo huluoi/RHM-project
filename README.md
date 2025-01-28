@@ -1,5 +1,5 @@
 # RHM project
-This is a repository of tokenizers that create a low-dimensional latent space for DDMs. 
+This is a project that investigates the connection between network layer representations and dataset internal structure hierarchy by linear probing.
 # Motivation
 Motivated by the paper (https://arxiv.org/abs/2307.02129), particularly its emphasis on hierachical structure, we intend to study the connection between the representation of each layer of the network and the internal structure hierarchy of the dataset. 
 # Methodology
