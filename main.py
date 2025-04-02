@@ -1,6 +1,3 @@
-"""
-    Train networks on 1d hierarchical models of data.
-"""
 
 import os
 import argparse
@@ -20,28 +17,32 @@ from observables import locality_measure, state2permutation_stability, state2clu
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 import torch.nn.functional as F
+from utility import *
 
-def plot(time, mse_values1, mse_values2, mse_values3, mse_values4, mse_values5, mse_values6, mse_values7, title):
+def plot(time, mse_values1, mse_values2, mse_values3, mse_values4, mse_values5, mse_values6, title):
 
     if len(time) != len(mse_values1):
         raise ValueError("The length of time and mse_values must be the same.")
 
     fig, ax = plt.subplots()
 
-    ax.plot(time, mse_values1, marker='o', linestyle='-', color='b', label="layer 1 features")
-    ax.plot(time, mse_values2, marker='o', linestyle='-', color='r', label="layer 2 features")
-    ax.plot(time, mse_values3, marker='o', linestyle='-', color='g', label="layer 3 features")
-    ax.plot(time, mse_values4, marker='o', linestyle='-', color='c', label="layer 4 features")
-    ax.plot(time, mse_values5, marker='o', linestyle='-', color='k', label="Class label of RHM")
-    ax.plot(time, mse_values6, marker='o', linestyle='-', color='m', label="Hidden feature of RHM(shallow)")
-    ax.plot(time, mse_values7, marker='o', linestyle='-', color='orange', label="Hidden feature of RHM(deep)")
+    ax.plot(time, mse_values1, marker='o', linestyle='-', color='b', markersize=1, label="layer 1 representation")
+    ax.plot(time, mse_values2, marker='o', linestyle='-', color='r', markersize=1, label="layer 2 representation")
+    ax.plot(time, mse_values3, marker='o', linestyle='-', color='g', markersize=1, label="layer 3 representation")
+    ax.plot(time, mse_values4, marker='o', linestyle='-', color='k', markersize=1, label="layer 4 representation")
+    ax.plot(time, mse_values5, marker='o', linestyle='-', color='cyan', markersize=1, label="layer 5 representation")
+    ax.plot(time, mse_values6, marker='o', linestyle='-', color='chocolate', markersize=1, label="layer 6 representation")
+    #ax.plot(time, mse_values7, marker='o', linestyle='-', color='deeppink', markersize=1, label="layer 7 representation")
+    #ax.plot(time, mse_values8, marker='o', linestyle='-', color='c', markersize=1, label="layer 8 representation")
+    #ax.plot(time, mse_values9, marker='o', linestyle='-', color='m', markersize=1, label="layer 9 representation")
+
 
     ax.set_title(title)
     ax.set_xlabel('Epoch')
-    ax.set_ylabel('MSE')
+    ax.set_ylabel('metric')
 
     ax.grid(True)
-
+    #plt.ylim(bottom, top)
     plt.legend()
 
     plt.show()
@@ -249,29 +250,50 @@ def train(args, trainloader, net0, criterion):
             features2 = []
             features3 = []
             features4 = []
+            features5 = []
+            features6 = []
+
+
 
             for i in range(total_batch):         # collect the features in different batches
-                features1.append(features[i*4+0])
-                features2.append(features[i*4+1])
-                features3.append(features[i*4+2])
-                features4.append(features[i*4+3])
+                features1.append(features[i*6+0])
+                features2.append(features[i*6+1])
+                features3.append(features[i*6+2])
+                features4.append(features[i*6+3])
+                features5.append(features[i*6+4])
+                features6.append(features[i*6+5])
+
+
+
+
 
             total_batch = 0
             input = torch.cat(net.input, dim = 0) # concatenate the input, intermediate path, and target from different patches
-            path_shallow = torch.cat(path_shallow_list, dim = 0) 
+            path_shallow = torch.cat(path_shallow_list, dim = 0)
             path_deep = torch.cat(path_deep_list, dim = 0)
             target = torch.cat(target_list, dim = 0)
             
-            v_1 = torch.cat(features1, dim = 0) 
+            v_1 = torch.cat(features1, dim = 0)
             v_2 = torch.cat(features2, dim = 0)
             v_3 = torch.cat(features3, dim = 0)
             v_4 = torch.cat(features4, dim = 0)
+            v_5 = torch.cat(features5, dim = 0)
+            v_6 = torch.cat(features6, dim = 0)
+
+
 
 
             net.feas1_probe = v_1       # store the features in the train set, then we use them in test()
             net.feas2_probe = v_2
             net.feas3_probe = v_3
             net.feas4_probe = v_4
+            net.feas5_probe = v_5
+            net.feas6_probe = v_6
+
+
+
+
+
             net.input_probe = input     # store training data, then we use them in test() to learn a linear model
             net.label_probe = target
 
@@ -304,7 +326,8 @@ def test(args, testloader, net, criterion, print_flag=True):
     test_loss = 0
     correct = 0
     total = 0
-    
+    num_layers = 6
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     with torch.no_grad():
         for batch_idx, (inputs, targets, path_shallow, path_deep) in enumerate(testloader):
             inputs, targets, path_shallow, path_deep = inputs.to(args.device), targets.to(args.device), path_shallow.to(args.device), path_deep.to(args.device)
@@ -315,6 +338,11 @@ def test(args, testloader, net, criterion, print_flag=True):
             features2_probe = net.feas2_probe
             features3_probe = net.feas3_probe
             features4_probe = net.feas4_probe
+            features5_probe = net.feas5_probe 
+            features6_probe = net.feas6_probe
+
+
+
             input_probe = net.input_probe
             label_probe = net.label_probe
             path_shallow_probe = net.path_shallow_probe
@@ -329,6 +357,10 @@ def test(args, testloader, net, criterion, print_flag=True):
             net.features2_probe = []
             net.features3_probe = []
             net.features4_probe = []
+            net.features5_probe = []
+            net.features6_probe = []
+
+
             net.input_probe = []
             net.label_probe = []
             net.path_shallow_probe = []
@@ -340,6 +372,11 @@ def test(args, testloader, net, criterion, print_flag=True):
             v_2 = features2_probe
             v_3 = features3_probe
             v_4 = features4_probe
+            v_5 = features5_probe
+            v_6 = features6_probe
+            v_6 = features6_probe
+
+
 
             v_1 = v_1.reshape(input_probe_dimension, -1)
             v_1 = v_1.detach()  
@@ -357,13 +394,22 @@ def test(args, testloader, net, criterion, print_flag=True):
             v_4 = v_4.detach()  
             v_4 = numpy.array(v_4)
 
+            v_5 = v_5.reshape(input_probe_dimension, -1)
+            v_5 = v_5.detach()  
+            v_5 = numpy.array(v_5)
+
+            v_6 = v_6.reshape(input_probe_dimension, -1)
+            v_6 = v_6.detach()  
+            v_6 = numpy.array(v_6)
+
+
 
             u_4 = numpy.array(input_probe)
             u_4 = u_4.reshape(input_probe_dimension, -1) 
 
             u_3 = numpy.array(path_deep_probe)
-            u_3 = u_3.reshape(input_probe_dimension, -1) 
-            
+            u_3 = u_3.reshape(input_probe_dimension, -1)
+           
             u_2 = numpy.array(path_shallow_probe)
             u_2 = u_2.reshape(input_probe_dimension, -1)
 
@@ -377,26 +423,80 @@ def test(args, testloader, net, criterion, print_flag=True):
             #print("New label_probe of training sample 818:", label_probe[817])
             #print("New label_probe of training sample 819:", label_probe[818])
 
+
+
+            # Probing Class label
             linear_model1 = LinearRegression()
             linear_model2 = LinearRegression()
             linear_model3 = LinearRegression()
             linear_model4 = LinearRegression()
             linear_model5 = LinearRegression()
             linear_model6 = LinearRegression()
+            
+            # Probing Shallow hidden feature
             linear_model7 = LinearRegression()
+            linear_model8 = LinearRegression()
+            linear_model9 = LinearRegression()
+            linear_model10 = LinearRegression()
+            linear_model11 = LinearRegression()
+            linear_model12 = LinearRegression()
+
+            # Probing Deep hidden feature
+            linear_model13 = LinearRegression()
+            linear_model14 = LinearRegression()
+            linear_model15 = LinearRegression()
+            linear_model16 = LinearRegression()
+            linear_model17 = LinearRegression()
+            linear_model18 = LinearRegression()
+
+            # Probing Data
+            linear_model19 = LinearRegression()
+            linear_model20 = LinearRegression()
+            linear_model21 = LinearRegression()
+            linear_model22 = LinearRegression()
+            linear_model23 = LinearRegression()
+            linear_model24 = LinearRegression()
+
             # learn a linear model using the features, input data, intermediate path, and class label stored in train().
-            linear_model1.fit(v_1, u_4)  
-            linear_model2.fit(v_2, u_4)  
-            linear_model3.fit(v_3, u_4)  
-            linear_model4.fit(v_4, u_4)  
-            linear_model5.fit(u_1, u_4)  
-            linear_model6.fit(u_2, u_4)  
-            linear_model7.fit(u_3, u_4)  
+
+            # Probe Class label
+            linear_model1.fit(v_1, u_1)  
+            linear_model2.fit(v_2, u_1)  
+            linear_model3.fit(v_3, u_1)  
+            linear_model4.fit(v_4, u_1)  
+            linear_model5.fit(v_5, u_1)  
+            linear_model6.fit(v_6, u_1)
+
+
+            # Probe Shallow hidden feature
+            linear_model7.fit(v_1, u_2)  
+            linear_model8.fit(v_2, u_2)  
+            linear_model9.fit(v_3, u_2)  
+            linear_model10.fit(v_4, u_2)  
+            linear_model11.fit(v_5, u_2)  
+            linear_model12.fit(v_6, u_2)
+
+            # Probe Deep hidden feature
+            linear_model13.fit(v_1, u_3)  
+            linear_model14.fit(v_2, u_3)  
+            linear_model15.fit(v_3, u_3)  
+            linear_model16.fit(v_4, u_3)  
+            linear_model17.fit(v_5, u_3)  
+            linear_model18.fit(v_6, u_3)
+
+            # Probe Data
+            linear_model19.fit(v_1, u_4)  
+            linear_model20.fit(v_2, u_4)  
+            linear_model21.fit(v_3, u_4)  
+            linear_model22.fit(v_4, u_4)  
+            linear_model23.fit(v_5, u_4)  
+            linear_model24.fit(v_6, u_4)
 
             features = net.feas
-            input = numpy.array(net.input)
-            input_dimension = input.shape[1]
-            #print("input_dimension", input.shape[1])
+            #print("input", net.input)
+            input = torch.cat(net.input, dim = 0)
+            input_dimension = input.shape[0]
+            #print("input_dimension", input.shape)
             
             net.input = []
             net.feas = []
@@ -408,13 +508,18 @@ def test(args, testloader, net, criterion, print_flag=True):
             v_2 = features[1]
             v_3 = features[2]
             v_4 = features[3]
+            v_5 = features[4]
+            v_6 = features[5]
+
+
+
 
             v_1 = v_1.reshape(input_dimension, -1)
-            v_1 = v_1.detach()  
+            v_1 = v_1.detach()
             v_1 = numpy.array(v_1)
 
             v_2 = v_2.reshape(input_dimension, -1)
-            v_2 = v_2.detach()  
+            v_2 = v_2.detach() 
             v_2 = numpy.array(v_2)
 
             v_3 = v_3.reshape(input_dimension, -1)
@@ -425,7 +530,15 @@ def test(args, testloader, net, criterion, print_flag=True):
             v_4 = v_4.detach()  
             v_4 = numpy.array(v_4)
 
+            v_5 = v_5.reshape(input_dimension, -1)
+            v_5 = v_5.detach()  
+            v_5 = numpy.array(v_5)
 
+            v_6 = v_6.reshape(input_dimension, -1)
+            v_6 = v_6.detach()  
+            v_6 = numpy.array(v_6)
+
+            input = input.detach()
             u_4 = numpy.array(input)              
             u_4 = u_4.reshape(input_dimension, -1)
 
@@ -440,6 +553,7 @@ def test(args, testloader, net, criterion, print_flag=True):
             u_3 = numpy.array(u_3)
             u_3 = u_3.reshape(input_dimension, -1)
 
+
             u_2 = F.one_hot(path_shallow, num_classes = 8)
             u_2 = numpy.array(u_2)
             u_2 = u_2.reshape(input_dimension, -1)
@@ -448,43 +562,172 @@ def test(args, testloader, net, criterion, print_flag=True):
             u_1 = numpy.array(u_1)
             u_1 = u_1.reshape(input_dimension, -1)
             
-            #print("label of testing sample 1:", u_1[0])
-            #print("label of testing sample 2:", u_1[1])
-            #print("label of testing sample 3:", u_1[2])
-            #print("label of testing sample 202:", u_1[201])
-            #print("label of testing sample 203:", u_1[202])
-            #print("label of testing sample 204:", u_1[203])
+            #print("shallow path of testing sample 1:", u_2[0])
+            #print("shallow path of testing sample 2:", u_2[1])
+            #print("shallow path of testing sample 3:", u_2[2])
+            #print("shallow path of testing sample 202:", u_2[201])
+            #print("shallow path of testing sample 203:", u_2[202])
+            #print("shallow path of testing sample 204:", u_2[203])
             
             # Predict using the trained model and features, input data, intermediate path, and class label from the test set
+
+
+            # Probing Class label
             predictions1 = linear_model1.predict(v_1)  
             predictions2 = linear_model2.predict(v_2)  
             predictions3 = linear_model3.predict(v_3)  
-            predictions4 = linear_model4.predict(v_4)  
-            predictions5 = linear_model5.predict(u_1)  
-            predictions6 = linear_model6.predict(u_2)  
-            predictions7 = linear_model7.predict(u_3)
+            predictions4 = linear_model4.predict(v_4)
+            predictions5 = linear_model5.predict(v_5)  
+            predictions6 = linear_model6.predict(v_6)
+
+            # Probing Shallow hidden feature
+            predictions7 = linear_model7.predict(v_1)  
+            predictions8 = linear_model8.predict(v_2)  
+            predictions9 = linear_model9.predict(v_3)  
+            predictions10 = linear_model10.predict(v_4)
+            predictions11 = linear_model11.predict(v_5)  
+            predictions12 = linear_model12.predict(v_6)
+
+            # Probing Deep hidden feature
+            predictions13 = linear_model13.predict(v_1)  
+            predictions14 = linear_model14.predict(v_2)  
+            predictions15 = linear_model15.predict(v_3)  
+            predictions16 = linear_model16.predict(v_4)
+            predictions17 = linear_model17.predict(v_5)  
+            predictions18 = linear_model18.predict(v_6)
+
+            # Probing Data
+            predictions19 = linear_model19.predict(v_1)  
+            predictions20 = linear_model20.predict(v_2)  
+            predictions21 = linear_model21.predict(v_3)  
+            predictions22 = linear_model22.predict(v_4)
+            predictions23 = linear_model23.predict(v_5)  
+            predictions24 = linear_model24.predict(v_6)
 
             # When predicting different quantities, the parameters of the linear model need to change. 
             # For example, u_4 here represents predicting input data. 
             # To predict the intermediate path/hidden feature, replace u_4 with u_2 or u_3.
             # Accordingly, the parameters and title in plot() also need to be modified.
 
-            mse1 = mean_squared_error(u_4, predictions1)  
-            mse2 = mean_squared_error(u_4, predictions2)  
-            mse3 = mean_squared_error(u_4, predictions3)  
-            mse4 = mean_squared_error(u_4, predictions4)  
-            mse5 = mean_squared_error(u_4, predictions5)  
-            mse6 = mean_squared_error(u_4, predictions6)  
-            mse7 = mean_squared_error(u_4, predictions7)
 
+            # Class label
+            mse1 = mean_squared_error(u_1, predictions1)  
+            mse2 = mean_squared_error(u_1, predictions2)  
+            mse3 = mean_squared_error(u_1, predictions3)  
+            mse4 = mean_squared_error(u_1, predictions4)
+            mse5 = mean_squared_error(u_1, predictions5)  
+            mse6 = mean_squared_error(u_1, predictions6)
+
+
+            # Shallow hidden feature
+            mse7 = mean_squared_error(u_2, predictions7)  
+            mse8 = mean_squared_error(u_2, predictions8)  
+            mse9 = mean_squared_error(u_2, predictions9)  
+            mse10 = mean_squared_error(u_2, predictions10)
+            mse11 = mean_squared_error(u_2, predictions11)  
+            mse12 = mean_squared_error(u_2, predictions12)
+
+
+            # Deep hidden feature
+            mse13 = mean_squared_error(u_3, predictions13)  
+            mse14 = mean_squared_error(u_3, predictions14)  
+            mse15 = mean_squared_error(u_3, predictions15)  
+            mse16 = mean_squared_error(u_3, predictions16)
+            mse17 = mean_squared_error(u_3, predictions17)  
+            mse18 = mean_squared_error(u_3, predictions18)
+
+            # Data
+            mse19 = mean_squared_error(u_4, predictions19)  
+            mse20 = mean_squared_error(u_4, predictions20)  
+            mse21 = mean_squared_error(u_4, predictions21)  
+            mse22 = mean_squared_error(u_4, predictions22)
+            mse23 = mean_squared_error(u_4, predictions23)  
+            mse24 = mean_squared_error(u_4, predictions24)
+
+
+            # Class label
             net.mse_test1.append(mse1)
             net.mse_test2.append(mse2)
             net.mse_test3.append(mse3)
             net.mse_test4.append(mse4)
             net.mse_test5.append(mse5)
             net.mse_test6.append(mse6)
-            net.mse_test7.append(mse7)
 
+            # Shallow hidden feature
+            net.mse_test7.append(mse7)
+            net.mse_test8.append(mse8)
+            net.mse_test9.append(mse9)
+            net.mse_test10.append(mse10)
+            net.mse_test11.append(mse11)
+            net.mse_test12.append(mse12)
+
+            # Deep hidden feature
+            net.mse_test13.append(mse13)
+            net.mse_test14.append(mse14)
+            net.mse_test15.append(mse15)
+            net.mse_test16.append(mse16)
+            net.mse_test17.append(mse17)
+            net.mse_test18.append(mse18)
+
+            # Data
+            net.mse_test19.append(mse19)
+            net.mse_test20.append(mse20)
+            net.mse_test21.append(mse21)
+            net.mse_test22.append(mse22)
+            net.mse_test23.append(mse23)
+            net.mse_test24.append(mse24)
+
+
+            for n, p in net.named_parameters():
+                if 'hier.0.0.weight' in n:
+                    W_0 = p
+                if 'hier.0.0.bias' in n:
+                    b_0 = p
+                if 'hier.1.0.weight' in n:
+                    W_1 = p
+                if 'hier.1.0.bias' in n:
+                    b_1 = p                
+                if 'hier.2.0.weight' in n:
+                    W_2 = p
+                if 'hier.2.0.bias' in n:
+                    b_2 = p
+                if 'hier.3.0.weight' in n:
+                    W_3 = p
+                if 'hier.3.0.bias' in n:
+                    b_3 = p
+                if 'hier.4.0.weight' in n:
+                    W_4 = p
+                if 'hier.4.0.bias' in n:
+                    b_4 = p
+                if 'hier.5.0.weight' in n:
+                    W_5 = p
+                if 'hier.5.0.bias' in n:
+                    b_5 = p
+
+            ETF_metric_1 = compute_ETF(W_0) ####### Computing NC2########
+            ETF_metric_2 = compute_ETF(W_1)
+            ETF_metric_3 = compute_ETF(W_2)
+            ETF_metric_4 = compute_ETF(W_3)
+            ETF_metric_5 = compute_ETF(W_4)
+            ETF_metric_6 = compute_ETF(W_5)
+
+            net.ETF_metric_1.append(ETF_metric_1)
+            net.ETF_metric_2.append(ETF_metric_2)
+            net.ETF_metric_3.append(ETF_metric_3)
+            net.ETF_metric_4.append(ETF_metric_4)
+            net.ETF_metric_5.append(ETF_metric_5)
+            net.ETF_metric_6.append(ETF_metric_6)
+
+
+            #mu_c, before_dict = compute_info(net, testloader, num_layers, device)[1:]
+            #ssw_fro_list, ssb_fro_list, nc1_list, nc1_tilde_list = calculate_nc1(net, testloader, num_layers, device)
+
+            #net.nc1_list_1.append(nc1_list[1:][0])
+            #net.nc1_list_2.append(nc1_list[1:][1])
+            #net.nc1_list_3.append(nc1_list[1:][2])
+            #net.nc1_list_4.append(nc1_list[1:][3])
+            #net.nc1_list_5.append(nc1_list[1:][4])
+            #net.nc1_list_6.append(nc1_list[1:][5])  
 
             loss = criterion(outputs, targets)
 
@@ -496,23 +739,87 @@ def test(args, testloader, net, criterion, print_flag=True):
             print(
                 f"[TEST][te.Loss: {test_loss * args.alpha / (batch_idx + 1):.03f}]"
                 f"[te.Acc: {100. * correct / total:.03f}, {correct} / {total}]",
-                f"[MSE1: {mse1}]",
-                f"[MSE2: {mse2}]",
-                f"[MSE3: {mse3}]",
-                f"[MSE4: {mse4}]",
-                f"[MSE5: {mse5}]",
-                f"[MSE6: {mse6}]",
-                f"[MSE7: {mse7}]",
+                f"Probing Class label:",
+                f"[layer 1: {mse1}]",
+                f"[layer 2: {mse2}]",
+                f"[layer 3: {mse3}]",
+                f"[layer 4: {mse4}]",
+                f"[layer 5: {mse5}]",
+                f"[layer 6: {mse6}]",
+
+                f"Probing Shallow hidden feature:",
+                f"[layer 1: {mse7}]",
+                f"[layer 2: {mse8}]",
+                f"[layer 3: {mse9}]",
+                f"[layer 4: {mse10}]",
+                f"[layer 5: {mse11}]",
+                f"[layer 6: {mse12}]",
+
+                f"Probing Deep hidden feature:",
+                f"[layer 1: {mse13}]",
+                f"[layer 2: {mse14}]",
+                f"[layer 3: {mse15}]",
+                f"[layer 4: {mse16}]",
+                f"[layer 5: {mse17}]",
+                f"[layer 6: {mse18}]",
+
+                f"Probing Data:",
+                f"[layer 1: {mse19}]",
+                f"[layer 2: {mse20}]",
+                f"[layer 3: {mse21}]",
+                f"[layer 4: {mse22}]",
+                f"[layer 5: {mse23}]",
+                f"[layer 6: {mse24}]",                
                 flush=True
             )
             time_points = list(range(1, len(net.mse_test1) + 1))
 
         
-        if len(net.mse_test1) == 25:     # last test epoch
+        if len(net.mse_test1) == 100:     # last test epoch
+
+
+            # Discrimination
+            #mu_c_mat = dict_to_mat(mu_c)
+            #dis = 1-np.cos(max_angle_metric(mu_c_mat))
+
+            # Plotting
+            #fig, ax1 = plt.subplots(figsize=(8,6))
+
+            #lw=6
+
+            #color = 'tab:red'
+            # ax1.set_xlabel('Layer', fontsize=20)
+            #ax1.set_ylabel('Between-class Discrimination', color=color, fontsize=20)
+            
+            #l2 = ax1.plot(np.arange(1,num_layers+1), dis, color=color, linewidth=lw, marker=".",markersize=25, label="Discrimination")
+            #ax1.tick_params(axis='y', labelcolor=color, labelsize=15)
+            #ax1.set_xticks(np.arange(1,num_layers+1), np.arange(1,num_layers+1), fontsize=15)
+            #plt.grid()
+            #ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+
+            #color = 'tab:blue'
+            #ax2.set_ylabel('NC1', color=color, fontsize=20)  # we already handled the x-label with ax1            
+            #l4 = ax2.semilogy(np.arange(1,num_layers+1), nc1_list[1:], marker=".",markersize=25, color=color, linewidth=lw,
+                #label="NC1")
+            #ax2.tick_params(axis='y', labelcolor=color, labelsize=15)
+            #ax2.fill_between(np.arange(2,num_layers+1), np.min(nc1_list[1:])-1, np.max(nc1_list[1:])+50, color="#7FFFD4", alpha=0.4)
+            #ax2.set_ylim(np.min(nc1_list[1:])-1, np.max(nc1_list[1:])+10)
+            #lns = l2+l4
+            #labs = [l.get_label() for l in lns]
+            # ax2.legend(lns, labs, loc=7, fontsize=15)
+            #ax2.legend(lns, labs, loc='upper center', bbox_to_anchor=(0.5,1.15), 
+                    #ncol=2, fontsize=20)
+            # ax2.set_ylim(np.min(nc1_tilde_list[1:])-1, np.max(nc1_tilde_list[1:])+1)
+            #fig.tight_layout()  # otherwise the right y-label is slightly clipped
+            #plt.show()
+
         # When changing the predict object, please modify the plot() function at the top of this program and the title here. 
-            plot(time_points, net.mse_test1, net.mse_test2, net.mse_test3, net.mse_test4, net.mse_test5, net.mse_test6, net.mse_test7, 'MSE on Probing Original data input of RHM (FCN, Test time)')
-
-
+            #plot(time_points, net.mse_test1, net.mse_test2, net.mse_test3, net.mse_test4, net.mse_test5, net.mse_test6, 'MSE on Probing Class label of RHM (FCN, Test time)')
+            #plot(time_points, net.mse_test7, net.mse_test8, net.mse_test9, net.mse_test10, net.mse_test11, net.mse_test12, 'MSE on Probing Hidden feature of RHM(shallow) (FCN, Test time)')
+            #plot(time_points, net.mse_test13, net.mse_test14, net.mse_test15, net.mse_test16, net.mse_test17, net.mse_test18, 'MSE on Probing Hidden feature of RHM(deep) (FCN, Test time)')
+            #plot(time_points, net.mse_test19, net.mse_test20, net.mse_test21, net.mse_test22, net.mse_test23, net.mse_test24, 'MSE on Probing Data of RHM (FCN, Test time)')
+            plot(time_points, net.ETF_metric_1, net.ETF_metric_2, net.ETF_metric_3, net.ETF_metric_4, net.ETF_metric_5, net.ETF_metric_6, 'ETF_metric of RHM (FCN, Test time)')
+            plot(time_points, net.nc1_list_1, net.nc1_list_2, net.nc1_list_3, net.nc1_list_4, net.nc1_list_5, net.nc1_list_6, 'NC1 of RHM (FCN, Test time)')
     return 100.0 * correct / total
 
 

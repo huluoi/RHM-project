@@ -37,10 +37,19 @@ class FCN(nn.Module):
         self.feas2_probe = []
         self.feas3_probe = []
         self.feas4_probe = []
+        self.feas5_probe = []
+        self.feas6_probe = []
+        self.feas7_probe = []
+        self.feas8_probe = []
+        self.feas9_probe = []
+        self.feas10_probe = []
+        self.feas11_probe = []
+        self.feas12_probe = []
         self.input = []
         self.input_probe = []
         self.label_probe = []
         self.path_shallow_probe = []
+        self.path_mid_probe = []
         self.path_deep_probe = []
         self.mse_test1 = []
         self.mse_test2 = []
@@ -49,16 +58,66 @@ class FCN(nn.Module):
         self.mse_test5 = []
         self.mse_test6 = []
         self.mse_test7 = []
+        self.mse_test8 = []
+        self.mse_test9 = []
+        self.mse_test10 = []
+        self.mse_test11 = []
+        self.mse_test12 = []
+        self.mse_test13 = []
+        self.mse_test14 = []
+        self.mse_test15 = []
+        self.mse_test16 = []
+        self.mse_test16 = []
+        self.mse_test17 = []
+        self.mse_test18 = []
+        self.mse_test19 = []
+        self.mse_test20 = []
+        self.mse_test21 = []
+        self.mse_test22 = []
+        self.mse_test23 = []
+        self.mse_test24 = []
+        self.mse_test25 = []
+        self.mse_test26 = []
+        self.mse_test27 = []
+        self.mse_test28 = []
+        self.mse_test29 = []
+        self.mse_test30 = []
+        self.ETF_metric_1 = []
+        self.ETF_metric_2 = []
+        self.ETF_metric_3 = []
+        self.ETF_metric_4 = []
+        self.ETF_metric_5 = []
+        self.ETF_metric_6 = []
+        self.nc1_list_1 = []
+        self.nc1_list_2 = []
+        self.nc1_list_3 = []
+        self.nc1_list_4 = []
+        self.nc1_list_5 = []
+        self.nc1_list_6 = []
+        self.WH_relation_metric1 = []
+        self.WH_relation_metric2 = []
+        self.WH_relation_metric3 = []
+        self.WH_relation_metric4 = []
+        self.WH_relation_metric5 = []
+        self.WH_relation_metric6 = []
+
+
         self.input_dimension = 0
 
         self.hier = nn.Sequential(
+            *[nn.Sequential(
+                    Linear1d(
+                        input_channels, h, bias
+                    ),
+                    nn.ReLU(),
+                )],
             *[nn.Sequential(
                     Linear1d(
                         h, h, bias
                     ),
                     nn.ReLU(),
                 )
-                for _ in range(0, num_layers)
+                for _ in range(1, num_layers)
             ],
         )
         self.beta = nn.Parameter(torch.randn(h, out_dim))

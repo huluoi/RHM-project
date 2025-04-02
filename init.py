@@ -23,7 +23,7 @@ def init_fun(args):
 
     if testset:
         testloader = torch.utils.data.DataLoader(
-            testset, batch_size=1024, shuffle=False, num_workers=0)
+            testset, batch_size=65536, shuffle=False, num_workers=0) #1024
     else:
         testloader = None
 

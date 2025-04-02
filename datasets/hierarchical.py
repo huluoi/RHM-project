@@ -55,6 +55,9 @@ def sample_hierarchical_rules(num_features, num_layers, m, num_classes, s, seed=
 
     return all_levels_paths, all_levels_tuples
 
+
+
+
 def sample_data_from_paths(samples_indices, paths, m, num_classes, num_layers, s, seed=0, seed_reset_layer=42):
     """
     Build hierarchical dataset from features hierarchy.
@@ -74,6 +77,7 @@ def sample_data_from_paths(samples_indices, paths, m, num_classes, num_layers, s
     x = paths[-1].reshape(num_classes, *sum([(m, s) for _ in range(num_layers)], ()))  # [nc, m, s, m, s, ...]
     path1 = paths[-2].reshape(num_classes, *sum([(m, s) for _ in range(num_layers - 1)], ()))
     path2 = paths[-3].reshape(num_classes, *sum([(m, s) for _ in range(num_layers - 2)], ()))
+
 
     groups_size = Pmax // num_classes
     y = samples_indices.div(groups_size, rounding_mode='floor')   # the class labels of samples 
@@ -115,14 +119,14 @@ def sample_data_from_paths(samples_indices, paths, m, num_classes, num_layers, s
         path_deep = path1[tuple([yi, *indices])]
         if l == 1:
             D = path2[tuple([yi2, *indices])]
-            path_shallow = D[:, [0, 2]]
-            #print("path_shallow:", path_shallow)
+            path_shallow = D[:, [0, 2]]                    #path_shallow = D[:, [0, 3, 6]]
+            print("path_shallow:", path_shallow[0])
         indices.append(rules)
         samples_indices = samples_indices % groups_size
 
     yi = y[:, None].repeat(1, s ** (num_layers - 1))
     
-    #print("intermediate path", path1)
+    print("path_deep", path_deep[0])
     #print("class vocabulary", x)
     #print("class and trajectory", [tuple([yi, *indices])])
     x = x[tuple([yi, *indices])].flatten(1)
@@ -384,7 +388,7 @@ class RandomHierarchyModel_Test(Dataset):
         #print("All Levels Paths:", paths)
         #print("All Levels Tuples:", _)
         #print("self.x_test", self.x[0])
-        #print("self.path_test", self.path)
+        #print("self.path_test", self.path_shallow)
         #print("self.paths_test", paths)
         #print("self._test", _)
         #print("self.targets_test", self.targets)
