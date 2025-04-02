@@ -8,9 +8,7 @@
  3. Use this linear model trained on the train set and the representation on the test set to predict the class label, shallow hidden feature, deep hidden feature, and original data input of the RHM test set. And we study which layer of the network's representation can better predict these quantities of RHM. 
  # Usage
  ```
- py main.py --device cpu --dataset hier1 --net fcn --output .\output\output.txt --num_layers 3 --net_layers 4
+ py main.py --device cpu --dataset hier1 --net fcn --output .\output\output.txt --num_layers 3 --net_layers 6 --epochs 1000
  ```
- ```
- py main.py --device cpu --dataset hier1 --net cnn --output .\output\output.txt --num_layers 3 --net_layers 4
- ```
+
  
