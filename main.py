@@ -822,7 +822,7 @@ def test(args, testloader, net, criterion, print_flag=True):
             #plot(time_points, net.mse_test13, net.mse_test14, net.mse_test15, net.mse_test16, net.mse_test17, net.mse_test18, 'MSE on Probing Hidden feature of RHM(deep) (FCN, Test time)')
             #plot(time_points, net.mse_test19, net.mse_test20, net.mse_test21, net.mse_test22, net.mse_test23, net.mse_test24, 'MSE on Probing Data of RHM (FCN, Test time)')
             plot(time_points, net.ETF_metric_1, net.ETF_metric_2, net.ETF_metric_3, net.ETF_metric_4, net.ETF_metric_5, net.ETF_metric_6, 'ETF_metric of RHM (FCN, Test time)')
-            plot(time_points, net.nc1_list_1, net.nc1_list_2, net.nc1_list_3, net.nc1_list_4, net.nc1_list_5, net.nc1_list_6, 'NC1 of RHM (FCN, Test time)')
+            #plot(time_points, net.nc1_list_1, net.nc1_list_2, net.nc1_list_3, net.nc1_list_4, net.nc1_list_5, net.nc1_list_6, 'NC1 of RHM (FCN, Test time)')
     return 100.0 * correct / total
 
 
