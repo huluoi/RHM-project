@@ -679,6 +679,7 @@ def test(args, testloader, net, criterion, print_flag=True):
 
 
             for n, p in net.named_parameters():
+                print("name:",n," parameter:", p)
                 if 'hier.0.0.weight' in n:
                     W_0 = p
                 if 'hier.0.0.bias' in n:
@@ -704,7 +705,9 @@ def test(args, testloader, net, criterion, print_flag=True):
                 if 'hier.5.0.bias' in n:
                     b_5 = p
 
-            ETF_metric_1 = compute_ETF(W_0) ####### Computing NC2########
+                    
+            ####### Computing NC2########
+            ETF_metric_1 = compute_ETF(W_0)
             ETF_metric_2 = compute_ETF(W_1)
             ETF_metric_3 = compute_ETF(W_2)
             ETF_metric_4 = compute_ETF(W_3)
