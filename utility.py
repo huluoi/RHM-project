@@ -124,16 +124,13 @@ def compute_Sigma_B(mu_c_dict, mu_G, device):
     return Sigma_B.cpu().numpy()
 
 def compute_ETF(W):
-    W = W.detach()
     K = W.shape[0]
-
     W = W - torch.mean(W, dim=0, keepdim=True)
     WWT = torch.mm(W, W.T)
     WWT /= torch.norm(WWT, p='fro')
 
     M = (torch.eye(K) - 1 / K * torch.ones((K, K)))
     sub = (torch.eye(K) - 1 / K * torch.ones((K, K))) / pow(K - 1, 0.5)
-
     ETF_metric = torch.norm(WWT - sub, p='fro')
     return ETF_metric.detach().cpu().numpy().item()
 
